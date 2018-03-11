@@ -117,6 +117,27 @@ private:
     allocator_type allocator_;
 };
 
+template <class T, class TAllocator>
+LinkedList<T,TAllocator>::LinkedList(LinkedList<T, TAllocator> &&other):
+    head_(other.head_),
+    tail_(other.tail_),
+    size_(other.size_),
+    allocator_(std::move(other.allocator_))
+{
+    other.head_ = nullptr;
+    other.tail_ = nullptr;
+    other.size_ = nullptr;
+}
+
+template <class T, class TAllocator>
+LinkedList<T,TAllocator>::LinkedList(const LinkedList<T, TAllocator> &other):
+    head_(other.head_),
+    tail_(other.tail_),
+    size_(other.size_),
+    allocator_(other.allocator_)
+{}
+
+
 
 
 #endif // XORLIST_H
