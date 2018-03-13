@@ -4,19 +4,45 @@
 #include <cstddef>
 #include <memory>
 #include <initializer_list>
+#include <cstdint>
 
+template <class T>
+struct Node{
+    T value;
+    intptr_t ptr;
+    Node(T value_){
+        value = value_;
+        ptr = reinterpret_cast<intptr_t>(nullptr);
+    }
+};
+template < class T, class TAllocator = std::allocator<T> >
+class LinkedList;
 template <class T, class TAllocator>
 class LinkedList {
 public:
     using value_type = T;
     using reference = T &;
     using const_reference = const T &;
-    using rebind_alloc = std::allocator_traits<TAllocator>::template rebind_alloc<Node<T>>;
+    using rebind_alloc = typename std::allocator_traits<TAllocator>::template rebind_alloc<Node<T>>;
     using allocator_type = rebind_alloc;
     using size_type = std::size_t;
 public:
 
-    LinkedList();
+    void print(){
+        Node<T>* current = head_;
+        Node<T>* prev_node = nullptr;
+        while(current != tail_){
+            auto temp = current;
+            Node<T>* current = calc_next_node(current,prev_node);
+            std::cout << current->value << std::endl;
+        }
+    }
+
+    LinkedList(){
+        tail_ = head_ = nullptr;
+        size_= 0;
+
+    }
 
     explicit LinkedList(const allocator_type& alloc);
 
@@ -29,7 +55,7 @@ public:
     LinkedList(const LinkedList<T, TAllocator>& other);
     LinkedList(LinkedList<T, TAllocator>&& other);
 
-    virtual ~LinkedList();
+    virtual ~LinkedList(){}
 
     LinkedList& operator=(const LinkedList<T, TAllocator>& right);
     LinkedList& operator=(LinkedList<T, TAllocator>&& right);
@@ -63,27 +89,27 @@ public:
     const T& front() const noexcept;
 
     // Iterators and such
-    iterator begin() noexcept;
-    iterator end() noexcept;
-    const_iterator begin() const noexcept;
-    const_iterator end() const noexcept;
-    const_iterator cbegin() const noexcept;
-    const_iterator cend() const noexcept;
+//    iterator begin() noexcept;
+//    iterator end() noexcept;
+//    const_iterator begin() const noexcept;
+//    const_iterator end() const noexcept;
+//    const_iterator cbegin() const noexcept;
+//    const_iterator cend() const noexcept;
 
     void sort() noexcept;
 
     template <class Compare>
     void sort(Compare comp) noexcept;
 
-    iterator insert(const_iterator position, const_reference val);
+//    iterator insert(const_iterator position, const_reference val);
 
-    template <class InputIterator>
-    iterator insert(const_iterator position, InputIterator first, InputIterator last);
+//    template <class InputIterator>
+//    iterator insert(const_iterator position, InputIterator first, InputIterator last);
 
-    void reverse() noexcept;
+//    void reverse() noexcept;
 
-    iterator erase(const_iterator position);
-    iterator erase(const_iterator first, const_iterator last);
+//    iterator erase(const_iterator position);
+//    iterator erase(const_iterator first, const_iterator last);
 
     void resize(size_type n);
     void resize(size_type n, const_reference val);
@@ -94,9 +120,9 @@ public:
     void assign(size_type n, const_reference val);
     void assign(std::initializer_list<T> il);
 
-    void splice(const_iterator position, LinkedList& x) noexcept;
-    void splice(const_iterator position, LinkedList& x, const_iterator i) noexcept;
-    void splice(const_iterator position, LinkedList& x, const_iterator first, const_iterator last) noexcept;
+//    void splice(const_iterator position, LinkedList& x) noexcept;
+//    void splice(const_iterator position, LinkedList& x, const_iterator i) noexcept;
+//    void splice(const_iterator position, LinkedList& x, const_iterator first, const_iterator last) noexcept;
 
     template <class BinaryPredicate>
     void unique(BinaryPredicate binary_pred);
@@ -105,16 +131,24 @@ public:
     template <class Compare>
     void merge(LinkedList& x, Compare comp) noexcept;
     void merge(LinkedList& x) noexcept;
-private:
 
-    struct Node{
-        T value;
-        Node* ptr;
-    };
+    void insert_after(Node<T>* const pos, Node<T> * const insert_node);
+    void insert_before(Node<T>* const pos, Node<T> * const insert_node);
     Node<T>* head_;
     Node<T>* tail_;
     size_type size_;
     allocator_type allocator_;
+private:
+
+private:
+    Node<T>* create_node(const_reference value);
+    bool is_empty_head();
+    Node<T>* calc_next_node(Node<T>* const prev_node, Node<T>* const current_node);
+
+    void insert_node_into_tail(Node<T>* const insert_node);
+    void insert_node_into_head(Node<T> * const insert_node);
+    void unlink(Node<T>* const node);
+    Node<T>* find_previous(Node<T> * const node);
 };
 
 template <class T, class TAllocator>
@@ -136,6 +170,102 @@ LinkedList<T,TAllocator>::LinkedList(const LinkedList<T, TAllocator> &other):
     size_(other.size_),
     allocator_(other.allocator_)
 {}
+
+template<class T, class TAllocator>
+Node<T>* LinkedList<T,TAllocator>::create_node(const_reference value){
+    Node<T> *node = allocator_.allocate(1);
+    allocator_.construct(node);
+    node->ptr = &node;
+    node->value = value;
+    return node;
+}
+
+template<class T, class TAllocator>
+bool LinkedList<T,TAllocator>::is_empty_head(){
+    return head_ == nullptr;
+}
+
+
+
+template<class T, class TAllocator>
+Node<T>* LinkedList<T,TAllocator>::calc_next_node(Node<T>* const prev_node, Node<T>* const current_node){
+    return reinterpret_cast<Node<T>*>(reinterpret_cast<intptr_t>(prev_node) ^ reinterpret_cast<intptr_t>(current_node->ptr));
+
+} 
+
+template<class T, class TAllocator>
+void LinkedList<T,TAllocator>::insert_after(Node<T> * const pos, Node<T> * const insert_node){
+    if(nullptr == pos){
+        insert_node_into_head(insert_node);
+    }else if(nullptr == head_){
+        head_=insert_node;
+        tail_=insert_node;
+    }else if(tail_ == pos){
+        insert_node_into_tail(insert_node);
+    }else{
+        Node<T>* prev = find_previous(pos);
+        Node<T>* next_node = calc_next_node(prev,pos);
+        next_node->ptr ^= reinterpret_cast<intptr_t>(pos) ^ reinterpret_cast<intptr_t>(insert_node);
+        insert_node->ptr = reinterpret_cast<intptr_t>(prev) ^  reinterpret_cast<intptr_t>(next_node);
+        pos->ptr = reinterpret_cast<intptr_t>(prev) ^ reinterpret_cast<intptr_t>(insert_node);
+
+
+    }
+
+
+}
+
+template<class T, class TAllocator>
+void LinkedList<T,TAllocator>::insert_before(Node<T> * const pos, Node<T> * const insert_node){
+    if(pos != nullptr){
+        Node<T>* prev_node = find_previous(pos);
+        if(nullptr == prev_node){
+            insert_after(prev_node,insert_node);
+        }else{
+            insert_node_into_tail(insert_node);
+        }
+    }else if(head_ == nullptr){
+        insert_node_into_head(insert_node);
+    }
+
+}
+
+
+template<class T, class TAllocator>
+void LinkedList<T,TAllocator>::insert_node_into_head(Node<T> * const insert_node){
+    insert_node->ptr = reinterpret_cast<intptr_t>(calc_next_node(nullptr,head_));
+    if(head_ != nullptr){
+        head_->ptr = reinterpret_cast<intptr_t>(calc_next_node(insert_node,calc_next_node(nullptr,reinterpret_cast<Node<T>*>(head_->ptr))));
+    }
+    head_ = insert_node;
+}
+
+template<class T, class TAllocator>
+void LinkedList<T,TAllocator>::insert_node_into_tail(Node<T> * const insert_node){
+    tail_->ptr = reinterpret_cast<intptr_t>(calc_next_node(calc_next_node(reinterpret_cast<Node<T>*>(tail_->ptr),nullptr),insert_node));
+    tail_ = insert_node;
+ }
+
+
+template<class T, class TAllocator>
+Node<T>* LinkedList<T,TAllocator>::find_previous(Node<T>* const node){
+    Node<T>* current = head_;
+    Node<T>* prev_node = nullptr;
+    while(current != node){
+        auto temp = current;
+        Node<T>* current = calc_next_node(prev_node,current);
+        prev_node = temp;
+    }
+    return prev_node;
+}
+
+
+
+
+
+
+
+
 
 
 
