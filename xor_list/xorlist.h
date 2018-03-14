@@ -42,7 +42,6 @@ public:
     LinkedList(){
         tail_ = head_ = nullptr;
         size_= 0;
-
     }
 
     explicit LinkedList(const allocator_type& alloc);
@@ -56,7 +55,7 @@ public:
     LinkedList(const LinkedList<T, TAllocator>& other);
     LinkedList(LinkedList<T, TAllocator>&& other);
 
-    virtual ~LinkedList(){}
+    virtual ~LinkedList(){clear();}
 
     LinkedList& operator=(const LinkedList<T, TAllocator>& right);
     LinkedList& operator=(LinkedList<T, TAllocator>&& right);
@@ -78,10 +77,16 @@ public:
     void pop_front();
     void pop_back();
 
-    size_type size() const noexcept;
-    bool empty() const noexcept;
+    size_type size() const noexcept{
+        return size_;
+    }
+    bool empty() const noexcept{
+        return size_ == 0;
+    }
 
-    void clear();
+    void clear(){
+        clear_list();
+    }
 
     T& back() noexcept;
     const T& back() const noexcept;
@@ -139,18 +144,15 @@ public:
     Node<T>* tail_;
     size_type size_;
     allocator_type allocator_;
-    void insert_node_into_tail(Node<T>* const insert_node);
-    void insert_node_into_head(Node<T> * const insert_node);
-private:
-
 private:
     Node<T>* create_node(const_reference value);
     bool is_empty_head();
     Node<T>* xor_func(Node<T>* const prev_node, Node<T>* const current_node);
 
-//    void insert_node_into_tail(Node<T>* const insert_node);
-//    void insert_node_into_head(Node<T> * const insert_node);
+    void insert_into_tail(Node<T>* const insert_node);
+    void insert_into_head(Node<T> * const insert_node);
     void unlink(Node<T>* const node);
+    void clear_list();
     Node<T>* find_previous(Node<T> * const node);
 };
 
@@ -197,19 +199,20 @@ Node<T>* LinkedList<T,TAllocator>::xor_func(Node<T>* const node1, Node<T>* const
 
 template<class T, class TAllocator>
 void LinkedList<T,TAllocator>::insert_after(Node<T> * const pos, Node<T> * const insert_node){
-    if(nullptr == pos){
-        insert_node_into_head(insert_node);
+    if(is_empty_head() || nullptr == pos){
+        insert_into_head(insert_node);
     }else if(tail_ == pos){
-        insert_node_into_tail(insert_node);
+        insert_into_tail(insert_node);
     }else{
         Node<T>* prev = find_previous(pos);
         Node<T>* next_node = xor_func(prev,reinterpret_cast<Node<T>*>(pos->ptr));
         if(nullptr == next_node){
-            insert_node_into_tail(insert_node);
+            insert_into_tail(insert_node);
         }else{
             next_node->ptr ^= reinterpret_cast<intptr_t>(pos) ^ reinterpret_cast<intptr_t>(insert_node);
             insert_node->ptr = reinterpret_cast<intptr_t>(pos) ^  reinterpret_cast<intptr_t>(next_node);
             pos->ptr ^= reinterpret_cast<intptr_t>(next_node) ^ reinterpret_cast<intptr_t>(insert_node);
+            size_++;
         }
     }
 }
@@ -221,18 +224,18 @@ void LinkedList<T,TAllocator>::insert_before(Node<T> * const pos, Node<T> * cons
         if(nullptr == prev_node){
             insert_after(prev_node,insert_node);
         }else{
-            insert_node_into_tail(insert_node);
+            insert_into_tail(insert_node);
         }
-    }else if(head_ == nullptr){
-        insert_node_into_head(insert_node);
+    }else if(is_empty_head()){
+        insert_into_head(insert_node);
     }
 
 }
 
 
 template<class T, class TAllocator>
-void LinkedList<T,TAllocator>::insert_node_into_tail(Node<T> * const insert_node){
-    if(head_ == nullptr){
+void LinkedList<T,TAllocator>::insert_into_tail(Node<T> * const insert_node){
+    if(is_empty_head()){
         insert_node->ptr = reinterpret_cast<intptr_t>(xor_func(nullptr,head_));
         head_ = insert_node;
         tail_ = insert_node;
@@ -241,12 +244,13 @@ void LinkedList<T,TAllocator>::insert_node_into_tail(Node<T> * const insert_node
          tail_->ptr = reinterpret_cast<intptr_t>(xor_func(reinterpret_cast<Node<T>*>(tail_->ptr), insert_node));
          tail_ = insert_node;
     }
+    size_++;
 }
 
 template<class T, class TAllocator>
-void LinkedList<T,TAllocator>::insert_node_into_head(Node<T> * const insert_node){
+void LinkedList<T,TAllocator>::insert_into_head(Node<T> * const insert_node){
     std::swap(tail_,head_);
-    insert_node_into_tail(insert_node);
+    insert_into_tail(insert_node);
     std::swap(tail_, head_);
 }
 
@@ -264,6 +268,20 @@ Node<T>* LinkedList<T,TAllocator>::find_previous(Node<T>* const node){
 }
 
 
+template<class T, class TAllocator>
+void LinkedList<T,TAllocator>::clear_list(){
+    Node<T>* current = head_;
+    Node<T>* prev_node = nullptr;
+    while(current){
+        Node<T>* next_node = xor_func(prev_node,reinterpret_cast<Node<T>*>(current->ptr));
+        prev_node = current;
+        current = next_node;
+        allocator_.destroy(prev_node);
+        allocator_.deallocate(prev_node,1);
+    }
+    size_ = 0;
+    head_ = tail_ = nullptr;
+}
 
 
 
