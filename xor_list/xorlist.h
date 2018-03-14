@@ -231,7 +231,7 @@ void LinkedList<T,TAllocator>::insert_before(Node<T> * const pos, Node<T> * cons
 
 
 template<class T, class TAllocator>
-void LinkedList<T,TAllocator>::insert_node_into_head(Node<T> * const insert_node){
+void LinkedList<T,TAllocator>::insert_node_into_tail(Node<T> * const insert_node){
     if(head_ == nullptr){
         insert_node->ptr = reinterpret_cast<intptr_t>(xor_func(nullptr,head_));
         head_ = insert_node;
@@ -241,21 +241,12 @@ void LinkedList<T,TAllocator>::insert_node_into_head(Node<T> * const insert_node
          tail_->ptr = reinterpret_cast<intptr_t>(xor_func(reinterpret_cast<Node<T>*>(tail_->ptr), insert_node));
          tail_ = insert_node;
     }
-    //    if(head_ != nullptr){
-//        insert_node->ptr = reinterpret_cast<intptr_t>(xor_func(nullptr,head_));
-//        head_->ptr = reinterpret_cast<intptr_t>(xor_func(insert_node,xor_func(nullptr,reinterpret_cast<Node<T>*>(head_->ptr))));
-//    }
-//    head_ = insert_node;
-//    size_++;
-//    if(size_ == 1){
-//        tail_ = head_;
-//    }
 }
 
 template<class T, class TAllocator>
-void LinkedList<T,TAllocator>::insert_node_into_tail(Node<T> * const insert_node){
+void LinkedList<T,TAllocator>::insert_node_into_head(Node<T> * const insert_node){
     std::swap(tail_,head_);
-    insert_node_into_head(insert_node);
+    insert_node_into_tail(insert_node);
     std::swap(tail_, head_);
 }
 
