@@ -132,7 +132,7 @@ public:
     template <class K>
     void emplace_back(K&& data){
         auto node = create_node(std::forward(data));
-        insert_into_tail(std::fopen(node));
+        insert_into_tail(std::forward(node));
     }
 
     template <class K>
@@ -234,7 +234,6 @@ public:
             }
         }
     }
-
 private:
     Node<T>* head_;
     Node<T>* tail_;
@@ -310,7 +309,6 @@ private:
         }
         return node;
     }
-
 
     void delete_node(Node<T>* const node){
         allocator_.destroy(node);
