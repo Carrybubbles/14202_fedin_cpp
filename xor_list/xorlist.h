@@ -203,13 +203,13 @@ void LinkedList<T,TAllocator>::insert_after(Node<T> * const pos, Node<T> * const
         insert_node_into_tail(insert_node);
     }else{
         Node<T>* prev = find_previous(pos);
-        Node<T>* next_node = xor_func(prev,pos);
+        Node<T>* next_node = xor_func(prev,reinterpret_cast<Node<T>*>(pos->ptr));
         if(nullptr == next_node){
             insert_node_into_tail(insert_node);
         }else{
             next_node->ptr ^= reinterpret_cast<intptr_t>(pos) ^ reinterpret_cast<intptr_t>(insert_node);
-            insert_node->ptr = reinterpret_cast<intptr_t>(prev) ^  reinterpret_cast<intptr_t>(next_node);
-            pos->ptr = reinterpret_cast<intptr_t>(prev) ^ reinterpret_cast<intptr_t>(insert_node);
+            insert_node->ptr = reinterpret_cast<intptr_t>(pos) ^  reinterpret_cast<intptr_t>(next_node);
+            pos->ptr ^= reinterpret_cast<intptr_t>(next_node) ^ reinterpret_cast<intptr_t>(insert_node);
         }
     }
 }
@@ -257,7 +257,7 @@ Node<T>* LinkedList<T,TAllocator>::find_previous(Node<T>* const node){
     Node<T>* prev_node = nullptr;
     while(current != node){
         auto temp = current;
-        Node<T>* current = xor_func(prev_node,current);
+        current = xor_func(prev_node,reinterpret_cast<Node<T>*>(current->ptr));
         prev_node = temp;
     }
     return prev_node;
