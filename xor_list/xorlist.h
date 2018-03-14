@@ -103,13 +103,23 @@ public:
     }
 
     template <class K>
-    void emplace_back(K&& data);
+    void emplace_back(K&& data){
+        auto node = create_node(std::forward(data));
+        insert_into_tail(std::fopen(node));
+    }
 
     template <class K>
-    void emplace_front(K&& data);
+    void emplace_front(K&&  data){
+        auto node = create_node(std::forward(data));
+        insert_into_head(std::forward(node));
+    }
 
-    void pop_front();
-    void pop_back();
+    void pop_front(){
+
+    }
+    void pop_back(){
+
+    }
 
     size_type size() const noexcept{
         return size_;
@@ -122,12 +132,19 @@ public:
         clear_list();
     }
 
-    T& back() noexcept;
-    const T& back() const noexcept;
+    T& back() noexcept{
+        return tail_->value;
+    }
+    const T& back() const noexcept{
+        return tail_->value;
+    }
 
-    T& front() noexcept;
-    const T& front() const noexcept;
-
+    T& front() noexcept{
+        return head_->value;
+    }
+    const T& front() const noexcept{
+        return head_->value;
+    }
     // Iterators and such
 //    iterator begin() noexcept;
 //    iterator end() noexcept;
@@ -188,6 +205,7 @@ private:
     void unlink(Node<T>* const node);
     void clear_list();
     Node<T>* find_previous(Node<T> * const node);
+    Node<T>* pop(Node<T>** const )
 };
 
 template <class T, class TAllocator>
