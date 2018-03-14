@@ -47,18 +47,16 @@ public:
         std::initializer_list<int>::iterator it;
         for (it=il.begin(); it!=il.end(); ++it){
             push_back(*it);
-            ++size_;
         }
     }
 
     explicit LinkedList(const std::size_t n, const allocator_type& alloc = allocator_type()) : allocator_(alloc){
         for(size_type i= 0; i < n; ++i){
-            push_back(nullptr);
-            ++size_;
+            push_back(0);
         }
     }
 
-    LinkedList(const std::size_t n, const_reference val, const allocator_type& alloc = allocator_type()) : allocator_(alloc), size_(n){
+    LinkedList(const std::size_t n, const_reference val, const allocator_type& alloc = allocator_type()) : allocator_(alloc){
         for(size_type i= 0; i < n; ++i){
             push_back(val);
         }
@@ -195,8 +193,19 @@ public:
 //    iterator erase(const_iterator position);
 //    iterator erase(const_iterator first, const_iterator last);
 
-    void resize(size_type n);
-    void resize(size_type n, const_reference val);
+    void resize(size_type n){
+        resize(n,0);
+    }
+    void resize(size_type n, const_reference val){
+        if(n > size_){
+            push_back(val);
+        }else{
+            int pop_size = size_ - n;
+            for(int i = 0; i < pop_size; i++){
+                pop_back();
+            }
+        }
+    }
 
     template <class InputIterator>
     void assign(InputIterator first, InputIterator last);
