@@ -84,11 +84,23 @@ public:
 
     }
 
-    void push_back(const_reference data);
-    void push_back(T&& data);
+    void push_back(const_reference data){
+        auto node = create_node(data);
+        insert_into_tail(node);
+    }
+    void push_back(T&& data){
+        auto node = create_node(std::move(data));
+        insert_into_tail(node);
+    }
 
-    void push_front(const_reference data);
-    void push_front(T&& data);
+    void push_front(const_reference data){
+        auto node = create_node(data);
+        insert_into_head(node);
+    }
+    void push_front(T&& data){
+        auto node = create_node(std::move(data));
+        insert_into_head(node);
+    }
 
     template <class K>
     void emplace_back(K&& data);
