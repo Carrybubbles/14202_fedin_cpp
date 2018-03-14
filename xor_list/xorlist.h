@@ -158,7 +158,7 @@ public:
     explicit LinkedList(const allocator_type& alloc): head_(nullptr),tail_(nullptr), size_(0),allocator_(alloc) {}
 
     LinkedList(std::initializer_list<value_type> il, const allocator_type& alloc): allocator_(alloc){
-        std::initializer_list<int>::iterator it;
+        std::initializer_list<value_type>::iterator it;
         for (it=il.begin(); it!=il.end(); ++it){
             push_back(*it);
         }
@@ -312,9 +312,11 @@ public:
     void sort() noexcept;
 
     template <class Compare>
-    void sort(Compare comp) noexcept;
+    void sort(Compare comp) noexcept{
 
-//    iterator insert(const_iterator position, const_reference val);
+    }
+
+    iterator insert(const_iterator position, const_reference val);
 
 //    template <class InputIterator>
 //    iterator insert(const_iterator position, InputIterator first, InputIterator last);
@@ -323,7 +325,9 @@ public:
         std::swap(head_,tail_);
     }
 
-//    iterator erase(const_iterator position);
+    iterator erase(const_iterator position){
+
+    }
 //    iterator erase(const_iterator first, const_iterator last);
 
     void resize(size_type n){
@@ -342,10 +346,27 @@ public:
     }
 
     template <class InputIterator>
-    void assign(InputIterator first, InputIterator last);
+    void assign(InputIterator first, InputIterator last){
+        clear();
+        for(InputIterator it = first; it != last; ++it){
+            push_back(*it);
+        }
+    }
 
-    void assign(size_type n, const_reference val);
-    void assign(std::initializer_list<T> il);
+    void assign(size_type n, const_reference val){
+        clear();
+        for(size_type i = 0; i < n; i++){
+            push_back(val);
+        }
+    }
+
+    void assign(std::initializer_list<value_type> il){
+        clear();
+        std::initializer_list<value_type>::iterator it;
+        for(it = il.begin(); it != il.end(); ++it){
+            push_back(*it);
+        }
+    }
 
 //    void splice(const_iterator position, LinkedList& x) noexcept;
 //    void splice(const_iterator position, LinkedList& x, const_iterator i) noexcept;
