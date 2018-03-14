@@ -52,15 +52,37 @@ public:
 
     LinkedList(const std::size_t n, const_reference val, const allocator_type& alloc = allocator_type());
 
-    LinkedList(const LinkedList<T, TAllocator>& other);
+    LinkedList(const LinkedList<T, TAllocator>& other){}
     LinkedList(LinkedList<T, TAllocator>&& other);
 
     virtual ~LinkedList(){clear();}
 
-    LinkedList& operator=(const LinkedList<T, TAllocator>& right);
-    LinkedList& operator=(LinkedList<T, TAllocator>&& right);
+    LinkedList& operator=(const LinkedList<T, TAllocator>& right){
+        if(&other != this){
+            size_ = right.size_;
+            allocator_ = right.allocator_;
+            head_ = right.head_;
+            tail_ = right.tail_;
+        }
+        return *this;
+    }
+    LinkedList& operator=(LinkedList<T, TAllocator>&& right){
+        if(&other != this){
+            size_ =      std::move(right.size_);
+            allocator_ = std::move(right.allocator_);
+            head_ =      std::move(right.head_);
+            tail_ =      std::move(right.tail_);
+        }
+        return *this;
+    }
 
-    void swap(LinkedList<T, TAllocator>& other);
+    void swap(LinkedList<T, TAllocator>& other){
+        std::swap(size_,other.size_);
+        std::swap(allocator_, other.allocator_);
+        std::swap(head_, other.head_);
+        std::swap(tail_,other.tail_);
+
+    }
 
     void push_back(const_reference data);
     void push_back(T&& data);
