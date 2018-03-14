@@ -6,6 +6,11 @@
 #include <initializer_list>
 #include <cstdint>
 
+namespace xlist {
+
+template < class T, class TAllocator = std::allocator<T> >
+class LinkedList;
+
 template <class T>
 struct Node{
     T value;
@@ -15,8 +20,115 @@ struct Node{
         ptr = reinterpret_cast<intptr_t>(nullptr);
     }
 };
-template < class T, class TAllocator = std::allocator<T> >
-class LinkedList;
+
+template <typename T>
+class xor_list_iterator : public std::iterator<std::bidirectional_iterator_tag, T> {
+public:
+    using value_type = T ;
+    using reference = T& ;
+    using pointer = T* ;
+    using pointer_node_list = Node<T>*;
+    using iterator_category = std::bidirectional_iterator_tag;
+public:
+    xor_list_iterator(): first_(nullptr), second_(nullptr){}
+    xor_list_iterator(pointer_node_list first, pointer_node_list second): first_(first), second_(second){}
+    xor_list_iterator(const xor_list_iterator & other):first_(other.first_), second_(other.second_){}
+    virtual ~xor_list_iterator(){
+        first_ = second_ =nullptr;
+    }
+
+    xor_list_iterator& operator++()
+    {
+        if(second_){
+            pointer_node_list next_node = xor_func(first_,reinterpret_cast<pointer_node_list>(second_->ptr));
+            first_ = second_;
+            second_ = next_node;
+        }
+        return *this;
+    }
+    xor_list_iterator& operator++(int) {
+        xor_list_iterator tmp(*this);
+        operator++();
+        return tmp;
+    }
+    xor_list_iterator& operator--()
+    {
+        if(first_){
+            pointer_node_list next_node = xor_func(second_,reinterpret_cast<pointer_node_list>(first_->ptr));
+            second_ = first_;
+            first_ = next_node;
+        }
+        return *this;
+    }
+    xor_list_iterator& operator--(int) {
+        xor_list_iterator tmp(*this);
+        operator--();
+        return tmp;
+    }
+    bool operator==(const xor_list_iterator& rhs) {return first_ == rhs.first_ && second_ == rhs.second_;}
+    bool operator!=(const xor_list_iterator& rhs) {return !operator ==(*this,rhs);}
+    reference operator*() {return second_->value;}
+    pointer operator->() {return &second_->value;}
+
+private:
+    pointer_node_list first_;
+    pointer_node_list second_;
+};
+
+template <typename T>
+class xor_list_const_iterator : public std::iterator<std::bidirectional_iterator_tag, T> {
+public:
+    using value_type = T ;
+    using const_reference = const T& ;
+    using const_pointer = T* ;
+    using pointer_node_list = Node<T>*;
+    using iterator_category = std::bidirectional_iterator_tag;
+public:
+    xor_list_const_iterator(): first_(nullptr), second_(nullptr){}
+    xor_list_const_iterator(pointer_node_list first, pointer_node_list second): first_(first), second_(second){}
+    xor_list_const_iterator(const xor_list_const_iterator& other):first_(other.first_), second_(other.second_){}
+    virtual ~xor_list_const_iterator(){
+        first_ = second_ = nullptr;
+    }
+
+    xor_list_const_iterator& operator++()
+    {
+        if(second_){
+            Node<T>* next_node = xor_func(first_,reinterpret_cast<Node<T>*>(second_->ptr));
+            first_ = second_;
+            second_ = next_node;
+        }
+        return *this;
+    }
+    xor_list_const_iterator& operator++(int) {
+       xor_list_const_iterator tmp(*this);
+        operator++();
+        return tmp;
+    }
+    xor_list_const_iterator& operator--()
+    {
+        if(first_){
+            pointer_node_list next_node = xor_func(second_,reinterpret_cast<pointer_node_list>(first_->ptr));
+            second_ = first_;
+            first_ = next_node;
+        }
+        return *this;
+    }
+    xor_list_const_iterator& operator--(int) {
+        xor_list_const_iterator tmp(*this);
+        operator--();
+        return tmp;
+    }
+    bool operator==(const xor_list_const_iterator& rhs) {return first_ == rhs.first_ && second_ == rhs.second_;}
+    bool operator!=(const xor_list_const_iterator& rhs) {return !operator ==(*this,rhs);}
+    const_reference operator*() {return second_->value;}
+    const_pointer operator->() {return &second_->value;}
+
+private:
+    pointer_node_list first_;
+    pointer_node_list second_;
+};
+
 template <class T, class TAllocator>
 class LinkedList {
 public:
@@ -26,6 +138,8 @@ public:
     using rebind_alloc = typename std::allocator_traits<TAllocator>::template rebind_alloc<Node<T>>;
     using allocator_type = TAllocator;
     using size_type = std::size_t;
+    using iterator = xor_list_iterator<T>;
+    using const_iterator = xor_list_const_iterator<T>;
 public:
 
     void print(){
@@ -84,15 +198,19 @@ public:
 
     LinkedList& operator=(const LinkedList<T, TAllocator>& right){
         if(&right != this){
+            clear();
             size_ = right.size_;
             allocator_ = right.allocator_;
             head_ = right.head_;
             tail_ = right.tail_;
+            right.head_ = nullptr;
+            right.tail_ = nullptr;
         }
         return *this;
     }
     LinkedList& operator=(LinkedList<T, TAllocator>&& right){
         if(&right != this){
+            clear();
             size_ =      std::move(right.size_);
             allocator_ = std::move(right.allocator_);
             head_ =      std::move(right.head_);
@@ -106,7 +224,6 @@ public:
         std::swap(allocator_, other.allocator_);
         std::swap(head_, other.head_);
         std::swap(tail_,other.tail_);
-
     }
 
     void push_back(const_reference data){
@@ -170,13 +287,27 @@ public:
     const T& front() const noexcept{
         return head_->value;
     }
+
+
     // Iterators and such
-//    iterator begin() noexcept;
-//    iterator end() noexcept;
-//    const_iterator begin() const noexcept;
-//    const_iterator end() const noexcept;
-//    const_iterator cbegin() const noexcept;
-//    const_iterator cend() const noexcept;
+    iterator begin() noexcept{
+        return iterator(nullptr,head_);
+    }
+    iterator end() noexcept{
+        return iterator(nullptr,tail_);
+    }
+    const_iterator begin() const noexcept{
+        return const_iterator(nullptr,head_);
+    }
+    const_iterator end() const noexcept{
+        return const_iterator(nullptr,tail_);
+    }
+    const_iterator cbegin() const noexcept{
+        return const_iterator(nullptr,head_);
+    }
+    const_iterator cend() const noexcept{
+        return const_iterator(nullptr,tail_);
+    }
 
     void sort() noexcept;
 
@@ -188,7 +319,9 @@ public:
 //    template <class InputIterator>
 //    iterator insert(const_iterator position, InputIterator first, InputIterator last);
 
-//    void reverse() noexcept;
+    void reverse() noexcept{
+        std::swap(head_,tail_);
+    }
 
 //    iterator erase(const_iterator position);
 //    iterator erase(const_iterator first, const_iterator last);
@@ -196,6 +329,7 @@ public:
     void resize(size_type n){
         resize(n,0);
     }
+
     void resize(size_type n, const_reference val){
         if(n > size_){
             push_back(val);
@@ -324,6 +458,9 @@ private:
         allocator_.deallocate(node,1);
     }
 };
+
+}//xlist
+
 
 
 
