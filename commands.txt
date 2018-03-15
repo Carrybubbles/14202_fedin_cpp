@@ -1,0 +1,3 @@
+gcov xor_list_test.cpp.gcno
+lcov --directory . -c -o report.info
+genhtml report.info --output-directory out
