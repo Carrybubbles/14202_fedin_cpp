@@ -29,14 +29,23 @@ public:
     using reference = T& ;
     using pointer = T* ;
     using pointer_node_list = Node<T>*;
+    using const_pointer_node_list = const Node<T>*;
+
     using iterator_category = std::bidirectional_iterator_tag;
 public:
     xor_list_iterator(): first_(nullptr), second_(nullptr){}
+    xor_list_iterator(const xor_list_iterator* other): first_(other.first_), second_(other.second_){}
     xor_list_iterator(pointer_node_list first, pointer_node_list second): first_(first), second_(second){}
     xor_list_iterator(const xor_list_iterator & other):first_(other.first_), second_(other.second_){}
+    xor_list_iterator& operator=(const xor_list_iterator& right){
+        if(&right != this){
+            first_ = right.first_;
+            second_ = right.second_;
+        }
+        return *this;
+    }
 
     virtual ~xor_list_iterator(){
-        first_ = second_ =nullptr;
     }
 
     xor_list_iterator& operator++()
@@ -50,7 +59,7 @@ public:
     }
     xor_list_iterator& operator++(int) {
         xor_list_iterator tmp(*this);
-        operator++();
+        ++(*this);
         return tmp;
     }
     xor_list_iterator& operator--()
@@ -64,7 +73,7 @@ public:
     }
     xor_list_iterator& operator--(int) {
         xor_list_iterator tmp(*this);
-        operator--();
+        --(*this);
         return tmp;
     }
     bool operator==(const xor_list_iterator& rhs) {return first_ == rhs.first_ && second_ == rhs.second_;}
@@ -93,10 +102,14 @@ public:
     xor_list_const_iterator(): first_(nullptr), second_(nullptr){}
     xor_list_const_iterator(pointer_node_list first, pointer_node_list second): first_(first), second_(second){}
     xor_list_const_iterator(const xor_list_const_iterator& other):first_(other.first_), second_(other.second_){}
-    virtual ~xor_list_const_iterator(){
-        first_ = second_ = nullptr;
+    xor_list_const_iterator& operator=(const xor_list_const_iterator& right){
+        if(&right != this){
+            first_ = right.first_;
+            second_ = right.second_;
+        }
+        return *this;
     }
-
+    virtual ~xor_list_const_iterator(){}
     xor_list_const_iterator& operator++()
     {
         if(second_){
@@ -107,8 +120,8 @@ public:
         return *this;
     }
     xor_list_const_iterator& operator++(int) {
-       xor_list_const_iterator tmp(*this);
-        operator++();
+        xor_list_const_iterator tmp(*this);
+        ++(*this);
         return tmp;
     }
     xor_list_const_iterator& operator--()
@@ -122,11 +135,11 @@ public:
     }
     xor_list_const_iterator& operator--(int) {
         xor_list_const_iterator tmp(*this);
-        operator--();
+        --(*this);
         return tmp;
     }
     bool operator==(const xor_list_const_iterator& rhs) {return first_ == rhs.first_ && second_ == rhs.second_;}
-    bool operator!=(const xor_list_const_iterator& rhs) {return !operator ==(rhs);}
+    bool operator!=(const xor_list_const_iterator& rhs) {return first_ != rhs.first_ || second_ != rhs.second_;}
     const_reference operator*() {return second_->value;}
     const_pointer operator->() {return &second_->value;}
     pointer_node_list first_;
@@ -151,6 +164,7 @@ public:
     using iterator = xor_list_iterator<T>;
     using const_iterator = xor_list_const_iterator<T>;
     using pointer_node_list = Node<T>*;
+    using const_pointer_node_list = Node<T>* const;
 public:
 
     void print(){
@@ -175,13 +189,13 @@ public:
         }
     }
 
-    explicit LinkedList(const std::size_t n, const allocator_type& alloc = allocator_type()) : allocator_(alloc){
+    explicit LinkedList(const size_type n, const allocator_type& alloc = allocator_type()) : allocator_(alloc){
         for(size_type i= 0; i < n; ++i){
             push_back(0);
         }
     }
 
-    LinkedList(const std::size_t n, const_reference val, const allocator_type& alloc = allocator_type()) : allocator_(alloc){
+    LinkedList(const size_type n, const_reference val, const allocator_type& alloc = allocator_type()) : allocator_(alloc){
         for(size_type i= 0; i < n; ++i){
             push_back(val);
         }
@@ -202,7 +216,7 @@ public:
     {
         other.head_ = nullptr;
         other.tail_ = nullptr;
-        other.size_ = nullptr;
+        other.size_ = 0;
     }
 
     virtual ~LinkedList(){clear();}
@@ -241,6 +255,7 @@ public:
         auto node = create_node(data);
         insert_into_tail(node);
     }
+    //????
     void push_back(T&& data){
         auto node = create_node(data);
         insert_into_tail(node);
@@ -257,14 +272,13 @@ public:
 
     template <class K>
     void emplace_back(K&& data){
-        auto node = create_node(std::forward(data));
-        insert_into_tail(std::forward(node));
+        auto node = create_node(std::forward<K>(data));
+        insert_into_tail(node);
     }
 
     template <class K>
     void emplace_front(K&&  data){
-        auto node = create_node(std::forward(data));
-//        node->value = std::forward(data);
+        auto node = create_node(std::forward<K>(data));
         insert_into_head(node);
     }
 
@@ -286,17 +300,17 @@ public:
         clear_list();
     }
 
-    T& back() noexcept{
+    reference back() noexcept{
         return tail_->value;
     }
-    const T& back() const noexcept{
+    const_reference back() const noexcept{
         return tail_->value;
     }
 
-    T& front() noexcept{
+    reference front() noexcept{
         return head_->value;
     }
-    const T& front() const noexcept{
+    const_reference front() const noexcept{
         return head_->value;
     }
 
@@ -321,17 +335,12 @@ public:
         return const_iterator(tail_,nullptr);
     }
 
-    void sort() noexcept;
 
-    template <class Compare>
-    void sort(Compare comp) noexcept{
-
-    }
 
     iterator insert(const_iterator position, const_reference val){
         auto node = create_node(val);
         insert_before(position.second_,node);
-        return iterator(position.first_, position.second_);
+        return iterator(node, position.second_);
     }
 
     template <class InputIterator>
@@ -347,12 +356,6 @@ public:
         std::swap(head_,tail_);
     }
 
-    iterator erase(const_iterator position){
-
-    }
-    iterator erase(const_iterator first, const_iterator last){
-
-    }
 
     void resize(size_type n){
         resize(n,0);
@@ -392,25 +395,23 @@ public:
         }
     }
 
-//    void splice(const_iterator position, LinkedList& x) noexcept;
-//    void splice(const_iterator position, LinkedList& x, const_iterator i) noexcept;
-//    void splice(const_iterator position, LinkedList& x, const_iterator first, const_iterator last) noexcept;
+
 
     template <class BinaryPredicate>
-    iterator unique(BinaryPredicate binary_pred){
+    void unique(BinaryPredicate binary_pred){
         auto first = begin();
         auto last = end();
         if (first == last){
-            return last;
+            return;
         }
-
         auto result = first;
         while (++first != last) {
             if (!binary_pred(*result, *first)) {
                 *(++result) = *first;
             }
         }
-        return ++result;
+        ++result;
+        erase(const_iterator(result.first_,result.second_),cend());
     }
     void unique(){
         unique([](const_reference a, const_reference b){
@@ -418,9 +419,91 @@ public:
         });
     }
 
+
+    iterator erase(const_iterator position){
+        auto first_position = position.first_;
+        auto second_position = position.second_;
+        auto next_node = ++position;
+        if(!second_position){
+            return end();
+        }
+        delete_node(remove_node_from_list(first_position,second_position,next_node.second_));
+        --size_;
+        return iterator(first_position,next_node.second_);
+    }
+
+    iterator erase(const_iterator first, const_iterator last){
+        iterator temp = iterator(first.first_, first.second_);
+        while(temp.second_ != last.second_){
+            temp = erase(const_iterator(temp.first_ ,temp.second_));
+        }
+        return iterator();
+    }
+
+
+    void sort() noexcept{
+        sort([](const_reference a, const_reference b){
+            return a > b;
+        });
+    }
+
     template <class Compare>
-    void merge(LinkedList& x, Compare comp) noexcept;
-    void merge(LinkedList& x) noexcept;
+    void sort(Compare comp) noexcept{
+    //????
+    }
+
+
+    void splice(const_iterator position, LinkedList& x) noexcept{
+        while(!x.empty()){
+            auto node = create_node(x.front());
+            x.pop_front();
+            insert_before(position.second_,node);
+        }
+    }
+    void splice(const_iterator position, LinkedList& x, const_iterator i) noexcept{
+        auto node = create_node(*i);
+        x.erase(i);
+        insert_before(position.second_,node);
+    }
+    void splice(const_iterator position, LinkedList& x, const_iterator first, const_iterator last) noexcept{
+        for(auto it = first; it != last; ++it){
+            auto node = create_node(*it);
+            insert_before(position.second_,node);
+        }
+        x.erase(first,last);
+    }
+
+    template <class Compare>
+    void merge(LinkedList& x, Compare comp) noexcept{
+        if(x.empty() || this == &x){
+           return;
+        }
+        auto it = cbegin();
+        while(!x.empty()){
+            if(it == cend()){
+                splice(it,x);
+                break;
+            }
+            if(comp(*it, x.front())){
+                auto node = create_node(x.front());
+                insert_before(it.second_,node);
+                x.pop_front();
+                it = const_iterator(node,it.second_);
+            }else{
+                it++;
+
+            }
+        }
+    }
+    void merge(LinkedList& x) noexcept{
+        merge(x, [](const_reference a, const_reference b){
+            if(a >= b){
+                return a;
+            }else if( a <= b){
+                return b;
+            }
+        });
+    }
 
 
 private:
@@ -428,9 +511,28 @@ private:
     pointer_node_list tail_;
     size_type size_;
     allocator_type allocator_;
-    pointer_node_list unlink(pointer_node_list const node);
 private:
-    void insert_after(pointer_node_list const pos, Node<T> * const insert_node){
+    
+    pointer_node_list remove_node_from_list(const_pointer_node_list prev, const_pointer_node_list cur,const_pointer_node_list next ){
+        if(prev){
+            prev->ptr ^= reinterpret_cast<intptr_t>(xor_func(next,cur));
+        }
+        if(next){
+            next->ptr ^= reinterpret_cast<intptr_t>(xor_func(cur,prev));
+        }
+
+        if(cur == head_){
+            head_ = next;
+        }
+
+        if(cur == tail_){
+            tail_ = prev;
+        }
+
+        return cur;
+    }
+
+    void insert_after(pointer_node_list const pos, pointer_node_list const insert_node){
         if(is_empty_head() || nullptr == pos){
             insert_into_head(insert_node);
         }else if(tail_ == pos){
@@ -455,8 +557,10 @@ private:
         std::swap(head_,tail_);
     }
     pointer_node_list create_node(const_reference value){
-        Node<T> *node = allocator_.allocate(1);
+
+        pointer_node_list node = allocator_.allocate(1);
         allocator_.construct(node,value);
+
         return node;
     }
     pointer_node_list create_node(T&& value){
@@ -501,11 +605,11 @@ private:
         size_ = 0;
         head_ = tail_ = nullptr;
     }
-    pointer_node_list find_previous(Node<T> * const node){
+    pointer_node_list find_previous(pointer_node_list const node){
         pointer_node_list current = head_;
         pointer_node_list prev_node = nullptr;
         while(current != node){
-            auto temp = current;
+            pointer_node_list temp = current;
             current = xor_func(prev_node,reinterpret_cast<pointer_node_list>(current->ptr));
             prev_node = temp;
         }
@@ -515,12 +619,12 @@ private:
         auto prev_node = find_previous(node);
         pointer_node_list next_node = xor_func(prev_node,reinterpret_cast<pointer_node_list>(node->ptr));
         //tail
-        if(nullptr == prev_node){
+        if(!prev_node && next_node){
             head_ = next_node;
             next_node->ptr ^=  reinterpret_cast<intptr_t>(node);
         }
         //head
-        else if(nullptr == next_node){
+        else if(!next_node && prev_node){
             tail_ = prev_node;
             tail_->ptr ^= reinterpret_cast<intptr_t>(node);
         }
