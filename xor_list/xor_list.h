@@ -77,7 +77,7 @@ public:
         return tmp;
     }
     bool operator==(const xor_list_iterator& rhs) {return first_ == rhs.first_ && second_ == rhs.second_;}
-    bool operator!=(const xor_list_iterator& rhs) {return !operator==(rhs);}
+    bool operator!=(const xor_list_iterator& rhs) {return first_ != rhs.first_ || second_ != rhs.second_;}
     reference operator*() {return second_->value;}
     pointer operator->() {return &second_->value;}
     pointer_node_list first_;
@@ -140,6 +140,7 @@ public:
     }
     bool operator==(const xor_list_const_iterator& rhs) {return first_ == rhs.first_ && second_ == rhs.second_;}
     bool operator!=(const xor_list_const_iterator& rhs) {return first_ != rhs.first_ || second_ != rhs.second_;}
+
     const_reference operator*() {return second_->value;}
     const_pointer operator->() {return &second_->value;}
     pointer_node_list first_;
@@ -166,17 +167,6 @@ public:
     using pointer_node_list = Node<T>*;
     using const_pointer_node_list = Node<T>* const;
 public:
-
-    void print(){
-        pointer_node_list current = head_;
-        pointer_node_list prev_node = nullptr;
-        while(current){
-            std::cout << current->value << std::endl;
-            pointer_node_list next_node = xor_func(prev_node,reinterpret_cast<pointer_node_list>(current->ptr));
-            prev_node = current;
-            current = next_node;
-        }
-    }
 
     LinkedList(): head_(nullptr), tail_(nullptr), size_(0),allocator_(allocator_type()) {}
 
@@ -255,7 +245,7 @@ public:
         auto node = create_node(data);
         insert_into_tail(node);
     }
-    //????
+
     void push_back(T&& data){
         auto node = create_node(data);
         insert_into_tail(node);
@@ -334,8 +324,6 @@ public:
     const_iterator cend() const noexcept{
         return const_iterator(tail_,nullptr);
     }
-
-
 
     iterator insert(const_iterator position, const_reference val){
         auto node = create_node(val);
@@ -449,7 +437,7 @@ public:
 
     template <class Compare>
     void sort(Compare comp) noexcept{
-    //????
+       quick_sort(begin(),--end(),comp);
     }
 
 
@@ -507,12 +495,34 @@ public:
 
 
 private:
-    pointer_node_list head_;
-    pointer_node_list tail_;
-    size_type size_;
+    pointer_node_list head_ = nullptr;
+    pointer_node_list tail_ = nullptr;
+    size_type size_ = 0;
     allocator_type allocator_;
 private:
-    
+    template<class Compare>
+    void quick_sort(iterator begin, iterator end, Compare comp)
+    {
+        if(begin.second_ == nullptr || end.second_ == nullptr)
+            return;
+        if(begin == end)
+            return;
+        auto it = begin;
+        auto temp = begin;
+        auto it_next  = ++temp;
+        while(it_next.second_ != nullptr)
+        {
+            if(comp(*begin,*it_next))
+            {
+                it++;
+                std::swap(*it, *it_next);
+            }
+            it_next++;
+        }
+        std::swap(*it , *begin);
+        quick_sort(begin, it,comp);
+        quick_sort(++it, end,comp);
+    }
     pointer_node_list remove_node_from_list(const_pointer_node_list prev, const_pointer_node_list cur,const_pointer_node_list next ){
         if(prev){
             prev->ptr ^= reinterpret_cast<intptr_t>(xor_func(next,cur));

@@ -1,83 +1,63 @@
 #ifndef XOR_LIST_TEST_H
 #define XOR_LIST_TEST_H
 #include "xor_list.h"
+#include "deps/include/gtest/gtest.h"
+#include "deps/include/gmock/gmock.h"
 
 namespace test {
 using namespace xlist;
 
 TEST(AddingTest, AddToTail){
     LinkedList<int,std::allocator<Node<int>>> list;
-    list.push_back(1);
-    list.push_back(1);
-    list.push_back(1);
-    list.push_back(23);
-    EXPECT_EQ(23, list.back());
+    for(int i = 0 ; i < 100500; i++){
+        list.push_back(i);
+        EXPECT_EQ(i, list.back());
+        EXPECT_EQ(i+1 , list.size());
+    }
 
 }
 
 TEST(AddingTest, AddToHead){
     LinkedList<int,std::allocator<Node<int>>> list;
-    list.push_back(1);
-    list.push_back(1);
-    list.push_back(1);
-    list.push_front(23);
-    EXPECT_EQ(23, list.front());
+    for(int i = 0 ; i < 100500; i++){
+        list.push_front(i);
+        EXPECT_EQ(i, list.front());
+        EXPECT_EQ(i+1 , list.size());
+    }
 }
 
 TEST(AddingTest, AddToItPos){
     LinkedList<int,std::allocator<Node<int>>> list;
-    list.push_back(1);
-    list.push_back(1);
-    list.push_back(1);
-    //head
-    list.insert(list.cbegin(), 50);
-    EXPECT_EQ(50, list.front());
-    //tail
-    list.insert(list.cbegin(), 51);
-    EXPECT_EQ(51, list.front());
+    list.insert(list.cbegin(), 0);
     //between pos
-    list.insert(++(list.cbegin()), 52);
-    auto it = list.cbegin();
-    for(int i = 0; i < 1; i++, ++it);
-    EXPECT_EQ(52, *it);
+    auto it = list.cend();
+    for(int i = 1; i < 100500; i++){
+        list.insert(it, i);
+    }
+    int i = 0;
+    for(auto it = list.cbegin(); it != list.cend(); it++){
+        EXPECT_EQ(i++, *it);
+    }
 
 }
 
 TEST(AddingTest, AddManuValuesToItPos){
     LinkedList<int,std::allocator<Node<int>>> list;
-    list.push_back(1);
-    list.push_back(1);
-    list.push_back(1);
-
-    std::vector<int> myvector (3,30);
-    list.insert(++list.cbegin(), myvector.begin(), myvector.end());
-    auto it = ++list.cbegin();
-    for(std::size_t i = 3; i > 0 && it != list.cend(); --i, ++it){
-        EXPECT_EQ(30, *it);
-    }
+    std::vector<int> v(5);
+    std::generate(v.begin(), v.end(), std::rand);
+    list.insert(list.cbegin(), v.begin(), v.end());
+    EXPECT_THAT(list,::testing::ElementsAreArray(v));
 
 }
 
 TEST(RemoveTest, PopBack){
-    LinkedList<int,std::allocator<Node<int>>> list;
-    list.push_back(1);
-    list.push_back(2);
-    list.push_back(3);
-
-    list.pop_back();
-    EXPECT_EQ(2, list.size());
-    EXPECT_EQ(2, list.back());
-}
-
-TEST(RemoveTest, PopFront){
-    LinkedList<int,std::allocator<Node<int>>> list;
-    list.push_back(1);
-    list.push_back(2);
-    list.push_back(3);
-
-    list.pop_front();
-    EXPECT_EQ(2, list.size());
-    EXPECT_EQ(2, list.front());
+    LinkedList<int,std::allocator<Node<int>>> list(100500);
+    std::fill(list.begin(), list.end(), 6);
+    for(int i = 100500; i > 0; i--){
+        list.pop_back();
+        EXPECT_EQ(6,list.back());
+        EXPECT_EQ(i-1,list.size());
+    }
 }
 
 
