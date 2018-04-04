@@ -230,6 +230,8 @@ public:
             allocator_ = std::move(right.allocator_);
             head_ =      std::move(right.head_);
             tail_ =      std::move(right.tail_);
+            right.tail_ = nullptr;
+            right.head_ = nullptr;
         }
         return *this;
     }
