@@ -172,7 +172,7 @@ public:
 
     explicit LinkedList(const allocator_type& alloc): head_(nullptr),tail_(nullptr), size_(0),allocator_(alloc) {}
 
-    LinkedList(std::initializer_list<value_type> il, const allocator_type& alloc): allocator_(alloc){
+    LinkedList(std::initializer_list<value_type> il, const allocator_type& alloc = allocator_type()): allocator_(alloc){
         typename std::initializer_list<value_type>::iterator it;
         for (it=il.begin(); it!=il.end(); ++it){
             push_back(*it);
@@ -193,9 +193,7 @@ public:
 
     LinkedList(const LinkedList<T, TAllocator>& other):allocator_(other.allocator_)
     {
-        for(auto it = other.cbegin(); it != other.end(); ++it){
-            push_back(*it);
-        }
+        assign(other.cbegin(), other.cend());
     }
 
     LinkedList(LinkedList<T, TAllocator>&& other):
@@ -275,7 +273,7 @@ public:
     }
 
     void pop_front(){
-        if(!head_ && tail_){
+        if(!head_ && !tail_){
             return;
         }
         if(head_ == tail_){
@@ -287,7 +285,7 @@ public:
         }
     }
     void pop_back(){
-        if(!head_ && tail_){
+        if(!head_ && !tail_){
             return;
         }
         if(head_ == tail_){
@@ -374,7 +372,10 @@ public:
 
     void resize(size_type n, const_reference val){
         if(n > size_){
-            push_back(val);
+            size_type final_size = n - size_;
+            for(size_type i = 0; i < final_size; i++){
+                push_back(val);
+            }
         }else{
             size_type pop_size = size_ - n;
             for(size_type i = 0; i < pop_size; i++){
@@ -383,18 +384,20 @@ public:
         }
     }
 
-    template <class InputIterator>
-    void assign(InputIterator first, InputIterator last){
-        clear();
-        for(InputIterator it = first; it != last; ++it){
-            push_back(*it);
-        }
-    }
 
     void assign(size_type n, const_reference val){
         clear();
         for(size_type i = 0; i < n; i++){
             push_back(val);
+        }
+    }
+    template <class InputIterator>
+
+    void assign(InputIterator first,
+                typename std::enable_if<std::is_class<InputIterator>::value,InputIterator>::type last){
+        clear();
+        for(InputIterator it = first; it != last; ++it){
+            push_back(*it);
         }
     }
 
@@ -515,6 +518,7 @@ private:
     size_type size_ = 0;
     allocator_type allocator_;
 private:
+
     template<class Compare>
     void quick_sort(iterator begin, iterator end, Compare comp)
     {
@@ -565,14 +569,11 @@ private:
         }else{
             pointer_node_list prev = find_previous(pos);
             pointer_node_list next_node = xor_func(prev,reinterpret_cast<pointer_node_list>(pos->ptr));
-            if(nullptr == next_node){
-                insert_into_tail(insert_node);
-            }else{
-                next_node->ptr ^= reinterpret_cast<intptr_t>(pos) ^ reinterpret_cast<intptr_t>(insert_node);
-                insert_node->ptr = reinterpret_cast<intptr_t>(pos) ^  reinterpret_cast<intptr_t>(next_node);
-                pos->ptr ^= reinterpret_cast<intptr_t>(next_node) ^ reinterpret_cast<intptr_t>(insert_node);
-                size_++;
-            }
+            next_node->ptr ^= reinterpret_cast<intptr_t>(pos) ^ reinterpret_cast<intptr_t>(insert_node);
+            insert_node->ptr = reinterpret_cast<intptr_t>(pos) ^  reinterpret_cast<intptr_t>(next_node);
+            pos->ptr ^= reinterpret_cast<intptr_t>(next_node) ^ reinterpret_cast<intptr_t>(insert_node);
+            size_++;
+
         }
     }
 
