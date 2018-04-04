@@ -273,10 +273,28 @@ public:
     }
 
     void pop_front(){
-        delete_node(pop(head_));
+        if(!head_ && tail_){
+            return;
+        }
+        if(head_ == tail_){
+            delete_node(head_);
+            head_ = nullptr;
+            tail_ = nullptr;
+        }else{
+            delete_node(pop(head_));
+        }
     }
     void pop_back(){
-        delete_node(pop(tail_));
+        if(!head_ && tail_){
+            return;
+        }
+        if(head_ == tail_){
+            delete_node(tail_);
+            head_ = nullptr;
+            tail_ = nullptr;
+        }else{
+            delete_node(pop(tail_));
+        }
     }
 
     size_type size() const noexcept{
