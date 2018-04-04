@@ -191,12 +191,12 @@ public:
         }
     }
 
-    LinkedList(const LinkedList<T, TAllocator>& other):
-        head_(other.head_),
-        tail_(other.tail_),
-        size_(other.size_),
-        allocator_(other.allocator_)
-    {}
+    LinkedList(const LinkedList<T, TAllocator>& other):allocator_(other.allocator_)
+    {
+        for(auto it = other.cbegin(); it != other.end(); ++it){
+            push_back(*it);
+        }
+    }
 
     LinkedList(LinkedList<T, TAllocator>&& other):
         head_(other.head_),
@@ -211,15 +211,15 @@ public:
 
     virtual ~LinkedList(){clear();}
 
-    LinkedList& operator=(const LinkedList<T, TAllocator>& right){
+    LinkedList& operator=(LinkedList<T, TAllocator>& right){
         if(&right != this){
             clear();
             size_ = right.size_;
             allocator_ = right.allocator_;
             head_ = right.head_;
             tail_ = right.tail_;
-            right.head_ = nullptr;
             right.tail_ = nullptr;
+            right.head_ = nullptr;
         }
         return *this;
     }
@@ -305,6 +305,9 @@ public:
     }
 
     void clear(){
+        if(!head_  && !tail_){
+            return;
+        }
         clear_list();
     }
 
@@ -448,9 +451,7 @@ public:
 
 
     void sort() noexcept{
-        sort([](const_reference a, const_reference b){
-            return a > b;
-        });
+        sort(std::greater<T>());
     }
 
     template <class Compare>
@@ -502,13 +503,7 @@ public:
         }
     }
     void merge(LinkedList& x) noexcept{
-        merge(x, [](const_reference a, const_reference b){
-            if(a >= b){
-                return a;
-            }else if( a <= b){
-                return b;
-            }
-        });
+        merge(x, std::greater<T>());
     }
 
 
@@ -622,16 +617,7 @@ private:
         std::swap(tail_, head_);
     }
     void clear_list(){
-        pointer_node_list current = head_;
-        pointer_node_list prev_node = nullptr;
-        while(current){
-            pointer_node_list next_node = xor_func(prev_node,reinterpret_cast<pointer_node_list>(current->ptr));
-            prev_node = current;
-            current = next_node;
-            delete_node(prev_node);
-        }
-        size_ = 0;
-        head_ = tail_ = nullptr;
+        erase(cbegin(), cend());
     }
     pointer_node_list find_previous(pointer_node_list const node){
         pointer_node_list current = head_;
