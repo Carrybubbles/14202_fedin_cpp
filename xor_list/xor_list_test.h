@@ -50,14 +50,36 @@ TEST(AddingTest, AddManuValuesToItPos){
 
 }
 
-TEST(RemoveTest, PopBack){
+TEST(RemoveTest, PopBackAndPopFront){
     LinkedList<int,std::allocator<Node<int>>> list(100500);
-    std::fill(list.begin(), list.end(), 6);
-    for(int i = 100500; i > 0; i--){
+    for(int i = 100500; i > 0; i-=2){
         list.pop_back();
-        EXPECT_EQ(6,list.back());
-        EXPECT_EQ(i-1,list.size());
+        list.pop_front();
+        EXPECT_EQ(i-2,list.size());
     }
+}
+
+TEST(SortTest, SortTest){
+    LinkedList<int,std::allocator<Node<int>>> list(500);
+    std::vector<int> v(500);
+    int i = 0;
+    int j = 499;
+    std::generate(list.begin(), list.end(), [&](){return j--;});
+    list.sort();
+    std::generate(v.begin(), v.end(), [&](){ return i++;});
+    EXPECT_THAT(list,::testing::ElementsAreArray(v));
+
+}
+
+TEST(ReverseTest, Reverse){
+    LinkedList<int,std::allocator<Node<int>>> list(500);
+    std::vector<int> v(500);
+    int i = 0;
+    int j = 499;
+    std::generate(list.begin(), list.end(), [&](){return j--;});
+    list.reverse();
+    std::generate(v.begin(), v.end(), [&](){ return i++;});
+    EXPECT_THAT(list,::testing::ElementsAreArray(v));
 }
 
 
