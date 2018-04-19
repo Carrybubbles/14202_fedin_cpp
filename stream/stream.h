@@ -2,6 +2,9 @@
 #define STREAM_H
 
 #include <vector>
+
+#include "area.h"
+
 template<class T,class Container, class Generator, class Iterator>
 class Stream{
 public:
@@ -22,10 +25,9 @@ public:
 
 
     template <typename Argument, typename... Args>
-    Stream(Argument&& first, Args&&... others)
+    Stream(Argument&& first, Args&&... others):
     {
-        container_->push_back(std::forward<Argument>(head));
-        this(std::forward<Args>(tail)...);
+        varConst(std::move(first), std::move(others));
     }
 
 
@@ -34,9 +36,24 @@ public:
     }
 
 private:
-    Generator generator_;
-    Container container_;
-    Area<Iterator> area_;
+    Generator generator_ = Generator();
+    Container container_ = Container();
+    Area<Iterator> area_ = Area();
+
+private:
+    template <typename Argument>
+    void varConst(Argument&& value)
+    {
+        container_->push_back(std::forward<Argument>(value));
+    }
+
+    template <typename Argument, typename... Args>
+    void varConst(Argument&& value, Args&&... others)
+    {
+        container_->push_back(std::forward<Argument>(value));
+        varConst(std::forward<Args>(others)...);
+    }
+
 
 }
 #endif // STREAM_H
