@@ -5,6 +5,7 @@
 #include <memory>
 #include <initializer_list>
 #include <cstdint>
+#include <algorithm>
 
 namespace xlist {
 
@@ -15,15 +16,16 @@ template <class T>
 struct Node{
     T value;
     intptr_t ptr;
-    Node(T value_){
-        value = value_;
-        ptr = 0;
-    }
+    Node(T&& value_):value(std::move(value_)), ptr(0){}
+    Node(const T& value_) : value(value_), ptr(0){}
     Node(){}
+
 };
 
 template <typename T>
 class xor_list_iterator : public std::iterator<std::bidirectional_iterator_tag, T> {
+private:
+    friend class LinkedList<T>;
 public:
     using value_type = T ;
     using reference = T& ;
@@ -45,8 +47,7 @@ public:
         return *this;
     }
 
-    virtual ~xor_list_iterator(){
-    }
+    ~xor_list_iterator(){}
 
     xor_list_iterator& operator++()
     {
@@ -80,18 +81,21 @@ public:
     bool operator!=(const xor_list_iterator& rhs) {return first_ != rhs.first_ || second_ != rhs.second_;}
     reference operator*() {return second_->value;}
     pointer operator->() {return &second_->value;}
+
+private:
+
     pointer_node_list first_;
     pointer_node_list second_;
-private:
 
     pointer_node_list xor_func(pointer_node_list const node1, pointer_node_list const node2){
         return reinterpret_cast<pointer_node_list>(reinterpret_cast<intptr_t>(node1) ^ reinterpret_cast<intptr_t>(node2));
-
     }
 };
 
 template <typename T>
 class xor_list_const_iterator : public std::iterator<std::bidirectional_iterator_tag, T> {
+private:
+    friend class LinkedList<T>;
 public:
     using value_type = T ;
     using const_reference = const T& ;
@@ -109,7 +113,7 @@ public:
         }
         return *this;
     }
-    virtual ~xor_list_const_iterator(){}
+    ~xor_list_const_iterator(){}
     xor_list_const_iterator& operator++()
     {
         if(second_){
@@ -143,9 +147,11 @@ public:
 
     const_reference operator*() {return second_->value;}
     const_pointer operator->() {return &second_->value;}
+
+private:
+
     pointer_node_list first_;
     pointer_node_list second_;
-private:
 
     pointer_node_list xor_func(pointer_node_list const node1, pointer_node_list const node2){
         return reinterpret_cast<pointer_node_list>(reinterpret_cast<intptr_t>(node1) ^ reinterpret_cast<intptr_t>(node2));
@@ -173,22 +179,21 @@ public:
     explicit LinkedList(const allocator_type& alloc): head_(nullptr),tail_(nullptr), size_(0),allocator_(alloc) {}
 
     LinkedList(std::initializer_list<value_type> il, const allocator_type& alloc = allocator_type()): allocator_(alloc){
-        typename std::initializer_list<value_type>::iterator it;
-        for (it=il.begin(); it!=il.end(); ++it){
-            push_back(*it);
-        }
+        std::for_each(il.begin(), il.end(), [this](const_reference n){ push_back(n); });
     }
 
     explicit LinkedList(const size_type n, const allocator_type& alloc = allocator_type()) : allocator_(alloc){
-        for(size_type i= 0; i < n; ++i){
+        for(int i =0 ; i< n; i++){
             push_back(0);
         }
+        //std::fill_n(std::back_inserter(*this), n, 0 );
     }
 
     LinkedList(const size_type n, const_reference val, const allocator_type& alloc = allocator_type()) : allocator_(alloc){
-        for(size_type i= 0; i < n; ++i){
-            push_back(val);
-        }
+       for(int i =0 ; i< n; i++){
+           push_back(val);
+       }
+        // std::fill_n(std::back_inserter(*this),n ,val);
     }
 
     LinkedList(const LinkedList<T, TAllocator>& other):allocator_(other.allocator_)
@@ -240,24 +245,19 @@ public:
         std::swap(head_, other.head_);
         std::swap(tail_,other.tail_);
     }
-
     void push_back(const_reference data){
-        auto node = create_node(data);
-        insert_into_tail(node);
+        emplace_back(data);
     }
 
     void push_back(T&& data){
-        auto node = create_node(data);
-        insert_into_tail(node);
+        emplace_back(std::move(data));
     }
 
     void push_front(const_reference data){
-        auto node = create_node(data);
-        insert_into_head(node);
+        emplace_front(data);
     }
     void push_front(T&& data){
-        auto node = create_node(data);
-        insert_into_head(node);
+        emplace_front(std::move(data));
     }
 
     template <class K>
@@ -372,7 +372,7 @@ public:
 
     void resize(size_type n, const_reference val){
         if(n > size_){
-            size_type final_size = n - size_;
+            size_type final_size = n - size_;            
             for(size_type i = 0; i < final_size; i++){
                 push_back(val);
             }
@@ -391,11 +391,12 @@ public:
             push_back(val);
         }
     }
-    template <class InputIterator>
 
+    template <class InputIterator>
     void assign(InputIterator first,
-                typename std::enable_if<std::is_class<InputIterator>::value,InputIterator>::type last){
+                typename std::enable_if<std::is_class<InputIterator>::value, InputIterator>::type last){
         clear();
+
         for(InputIterator it = first; it != last; ++it){
             push_back(*it);
         }
@@ -403,13 +404,8 @@ public:
 
     void assign(std::initializer_list<value_type> il){
         clear();
-        typename std::initializer_list<value_type>::iterator it;
-        for(it = il.begin(); it != il.end(); ++it){
-            push_back(*it);
-        }
+        std::for_each(il.begin(), il.end(), [this](const_reference n){ push_back(n); });
     }
-
-
 
     template <class BinaryPredicate>
     void unique(BinaryPredicate binary_pred){
@@ -427,6 +423,7 @@ public:
         ++result;
         erase(const_iterator(result.first_,result.second_),cend());
     }
+    
     void unique(){
         unique([](const_reference a, const_reference b){
             return a == b;
@@ -467,16 +464,18 @@ public:
 
     void splice(const_iterator position, LinkedList& x) noexcept{
         while(!x.empty()){
-            auto node = create_node(x.front());
+            auto node = create_node(std::move(x.front()));
             x.pop_front();
             insert_before(position.second_,node);
         }
     }
+    
     void splice(const_iterator position, LinkedList& x, const_iterator i) noexcept{
         auto node = create_node(*i);
         x.erase(i);
         insert_before(position.second_,node);
     }
+    
     void splice(const_iterator position, LinkedList& x, const_iterator first, const_iterator last) noexcept{
         for(auto it = first; it != last; ++it){
             auto node = create_node(*it);
@@ -497,7 +496,7 @@ public:
                 break;
             }
             if(comp(*it, x.front())){
-                auto node = create_node(x.front());
+                auto node = create_node(std::move(x.front()));
                 insert_before(it.second_,node);
                 x.pop_front();
                 it = const_iterator(node,it.second_);
@@ -577,7 +576,7 @@ private:
         }
     }
 
-    void insert_before(pointer_node_list const pos, Node<T> * const insert_node){
+    void insert_before(pointer_node_list const pos, pointer_node_list const insert_node){
         std::swap(head_,tail_);
         insert_after(pos,insert_node);
         std::swap(head_,tail_);
@@ -589,8 +588,9 @@ private:
 
         return node;
     }
+
     pointer_node_list create_node(T&& value){
-        Node<T> *node = allocator_.allocate(1);
+        pointer_node_list node = allocator_.allocate(1);
         allocator_.construct(node,std::move(value));
         return node;
     }
@@ -622,6 +622,7 @@ private:
     void clear_list(){
         erase(cbegin(), cend());
     }
+    
     pointer_node_list find_previous(pointer_node_list const node){
         pointer_node_list current = head_;
         pointer_node_list prev_node = nullptr;
@@ -632,6 +633,7 @@ private:
         }
         return prev_node;
     }
+    
     pointer_node_list pop(pointer_node_list const node){
         auto prev_node = find_previous(node);
         pointer_node_list next_node = xor_func(prev_node,reinterpret_cast<pointer_node_list>(node->ptr));
@@ -656,17 +658,5 @@ private:
 };
 
 }//xlist
-
-
-
-
-
-
-
-
-
-
-
-
 
 #endif // XORLIST_H

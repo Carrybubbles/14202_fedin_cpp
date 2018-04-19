@@ -4,11 +4,13 @@
 #include "deps/include/gtest/gtest.h"
 #include "deps/include/gmock/gmock.h"
 
+#include "memory"
+
 namespace test {
 using namespace xlist;
 
 TEST(AddingTest, AddToTail){
-    LinkedList<int,std::allocator<Node<int>>> list;
+    LinkedList<int> list;
     for(int i = 0 ; i < 100500; i++){
         list.push_back(i);
         ASSERT_EQ(i, list.back());
@@ -19,13 +21,13 @@ TEST(AddingTest, AddToTail){
 }
 
 TEST(AddingTest, AddToHead){
-    LinkedList<int,std::allocator<Node<int>>> list;
+    LinkedList<int> list;
     for(int i = 0 ; i < 100500; i++){
         list.push_front(i);
         ASSERT_EQ(i, list.front());
         ASSERT_EQ(i+1 , list.size());
     }
-    LinkedList<int,std::allocator<Node<int>>> list2;
+    LinkedList<int> list2;
     for(int i = 0 ; i < 100500; i++){
         int k = i;
         list2.push_front(std::move(k));
@@ -35,7 +37,7 @@ TEST(AddingTest, AddToHead){
 }
 
 TEST(AddingTest, AddToItPos){
-    LinkedList<int,std::allocator<Node<int>>> list;
+    LinkedList<int> list;
     list.insert(list.cbegin(), 0);
     //between pos
     auto it = list.cend();
@@ -50,7 +52,7 @@ TEST(AddingTest, AddToItPos){
 }
 
 TEST(AddingTest, AddManuValuesToItPos){
-    LinkedList<int,std::allocator<Node<int>>> list;
+    LinkedList<int> list;
     std::vector<int> v(5);
     std::generate(v.begin(), v.end(), std::rand);
     list.insert(list.cbegin(), v.begin(), v.end());
@@ -59,7 +61,7 @@ TEST(AddingTest, AddManuValuesToItPos){
 }
 
 TEST(RemoveTest, PopBackAndPopFront){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     for(int i = 500; i > 0; i-=2){
         list.pop_back();
         list.pop_front();
@@ -77,7 +79,7 @@ TEST(RemoveTest, PopBackAndPopFront){
 }
 
 TEST(SortTest, SortTest){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     std::vector<int> v(500);
     int i = 0;
     int j = 499;
@@ -88,8 +90,25 @@ TEST(SortTest, SortTest){
 
 }
 
+TEST(SortTest, UniqPtrSort){
+    LinkedList<std::unique_ptr<int>> list;
+    std::vector<std::unique_ptr<int>> v;
+    for(int i = 0; i < 500; i++){
+        list.push_back(std::unique_ptr<int> (new int(i)));
+    }
+    for(int i = 499; i >= 0; i--){
+        v.push_back(std::unique_ptr<int> (new int(i)));
+    }
+    list.sort([](const std::unique_ptr<int>& a, const std::unique_ptr<int>& b){return *a < *b;});
+    auto it2 = v.begin();
+    for(auto it = list.begin() ; it != list.end(); ++it){
+        ASSERT_EQ(*it->get(), *it2->get());
+        ++it2;
+    }
+}
+
 TEST(ReverseTest, Reverse){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     std::vector<int> v(500);
     int i = 0;
     int j = 499;
@@ -100,18 +119,18 @@ TEST(ReverseTest, Reverse){
 }
 
 TEST(ConstructorsTest, Copy){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     int i = 0;
     std::generate(list.begin(), list.end(), [&](){ return i++;});
-    LinkedList<int,std::allocator<Node<int>>> list2(list);
+    LinkedList<int> list2(list);
     ASSERT_THAT(list,::testing::ElementsAreArray(list2));
 }
 
 TEST(OperatorsTest, OperatorRavno){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     int i = 0;
     std::generate(list.begin(), list.end(), [&](){ return i++;});
-    LinkedList<int,std::allocator<Node<int>>> list2;
+    LinkedList<int> list2;
     list2 = list;
     std::vector<int> v(500);
     i = 0;
@@ -121,10 +140,10 @@ TEST(OperatorsTest, OperatorRavno){
 }
 
 TEST(ConstructorsTest, MoveCopyConstructors){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     int i = 0;
     std::generate(list.begin(), list.end(), [&](){ return i++;});
-    LinkedList<int,std::allocator<Node<int>>> list2(std::move(list));
+    LinkedList<int> list2(std::move(list));
     std::vector<int> v(500);
     i = 0;
     std::generate(v.begin(), v.end(), [&](){ return i++;});
@@ -132,10 +151,10 @@ TEST(ConstructorsTest, MoveCopyConstructors){
 }
 
 TEST(OperatorsTEST, MoveOperatorRavno){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     int i = 0;
     std::generate(list.begin(), list.end(), [&](){ return i++;});
-    LinkedList<int,std::allocator<Node<int>>> list2;
+    LinkedList<int> list2;
     list2 = std::move(list);
     std::vector<int> v(500);
     i = 0;
@@ -144,10 +163,10 @@ TEST(OperatorsTEST, MoveOperatorRavno){
 }
 
 TEST(SwapTest, Swap){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     int i = 0;
     std::generate(list.begin(), list.end(), [&](){ return i++;});
-    LinkedList<int,std::allocator<Node<int>>> list2(500);
+    LinkedList<int> list2(500);
     i = 0;
     std::generate(list2.begin(), list2.end(), [&](){ return i--;});
 
@@ -166,7 +185,7 @@ TEST(SwapTest, Swap){
 }
 
 TEST(ResizeTest, resizeGreate){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     int i = 0;
     std::generate(list.begin(), list.end(), [&](){ return i++;});
     list.resize(1000);
@@ -176,7 +195,7 @@ TEST(ResizeTest, resizeGreate){
 }
 
 TEST(AssignTest, assingnList){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     int i = 0;
     std::generate(list.begin(), list.end(), [&](){ return i++;});
     list.assign({1,2,3,4,5,6});
@@ -185,7 +204,7 @@ TEST(AssignTest, assingnList){
 }
 
 TEST(AssignTest, assignValues){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     int i = 0;
     std::generate(list.begin(), list.end(), [&](){ return i++;});
     std::vector<int> v(250,6);
@@ -194,24 +213,24 @@ TEST(AssignTest, assignValues){
 }
 
 TEST(UniqueTest, unique){
-    LinkedList<int,std::allocator<Node<int>>> list({1,1,2,2,3,3,3,4,5,5,5,5,6,6,6,7,7,8,9});
+    LinkedList<int> list({1,1,2,2,3,3,3,4,5,5,5,5,6,6,6,7,7,8,9});
     std::vector<int> v({1,2,3,4,5,6,7,8,9});
     list.unique();
     ASSERT_THAT(list,::testing::ElementsAreArray(v));
-    LinkedList<int,std::allocator<Node<int>>> list2({1});
+    LinkedList<int> list2({1});
     list2.unique();
     ASSERT_THAT(list2,::testing::ElementsAreArray({1}));
-    LinkedList<int,std::allocator<Node<int>>> list3;
+    LinkedList<int> list3;
     list3.unique();
     ASSERT_THAT(0,list3.size());
 
 }
 
 TEST(SpliceTest, splice){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
-    LinkedList<int,std::allocator<Node<int>>> list2(500);
-    LinkedList<int,std::allocator<Node<int>>> list3(500);
-    LinkedList<int,std::allocator<Node<int>>> list4(500);
+    LinkedList<int> list(500);
+    LinkedList<int> list2(500);
+    LinkedList<int> list3(500);
+    LinkedList<int> list4(500);
     int i = 0;
     std::generate(list.begin(), list.end(), [&](){ return i++;});
     i = 0;
@@ -224,9 +243,9 @@ TEST(SpliceTest, splice){
 }
 
 TEST(MergeTest, merger){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     int i = 0;
-    LinkedList<int,std::allocator<Node<int>>> list2(500);
+    LinkedList<int> list2(500);
     std::vector<int> v(1000);
     int j = 2;
     std::generate(v.begin(),v.end(), [&](){return j++;});
@@ -241,8 +260,22 @@ TEST(MergeTest, merger){
     ASSERT_THAT(list,::testing::ElementsAreArray(v));
 }
 
+TEST(MergeTest, UniqPtrmerge){
+    LinkedList<std::unique_ptr<int>> list(500);
+    LinkedList<std::unique_ptr<int>> list2(500);
+    std::vector<std::unique_ptr<int>> v(1000);
+    int j = 2;
+    std::generate(v.begin(),v.end(), [&](){return std::unique_ptr<int>(new int(j++));});
+    int i = 0;
+    std::generate(list.begin(), list.end(), [&](){ return std::unique_ptr<int>(new int(i += 2)); });
+    i = 1;
+    std::generate(list2.begin(), list2.end(), [&](){ return std::unique_ptr<int>(new int(i += 2));});
+
+    list.merge(list2);
+}
+
 TEST(PushTest, EmplaceBack){
-    LinkedList<int,std::allocator<Node<int>>> list;
+    LinkedList<int> list;
     for(int i = 0; i < 500; i++){
         list.emplace_back(i);
     }
@@ -259,21 +292,20 @@ TEST(PushTest, EmplaceBack){
 }
 
 TEST(EraseTest, erase){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+    LinkedList<int> list(500);
     int i = 0;
     std::generate(list.begin(), list.end(), [&](){ return i++;});
     list.erase(list.cend());
 }
 
-TEST(IteratorTest, Movement ){
-    LinkedList<int,std::allocator<Node<int>>> list(500);
+TEST(IteratorTest, Movement){
+    LinkedList<int> list(500);
     int i = 0;
     std::generate(list.begin(), list.end(), [&](){ return i++;});
     i = 499;
     for(auto it = --list.end(); it != list.begin(); --it){
         ASSERT_THAT(i--, *it);
     }
-
 }
 
 }//test
