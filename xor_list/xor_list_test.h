@@ -261,8 +261,8 @@ TEST(MergeTest, merger){
 }
 
 TEST(MergeTest, UniqPtrmerge){
-    LinkedList<std::unique_ptr<int>> list(500);
-    LinkedList<std::unique_ptr<int>> list2(500);
+    LinkedList<std::unique_ptr<int>> list;
+    LinkedList<std::unique_ptr<int>> list2;
     std::vector<std::unique_ptr<int>> v(1000);
     int j = 2;
     std::generate(v.begin(),v.end(), [&](){return std::unique_ptr<int>(new int(j++));});
