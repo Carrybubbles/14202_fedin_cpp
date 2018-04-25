@@ -183,17 +183,11 @@ public:
     }
 
     explicit LinkedList(const size_type n, const allocator_type& alloc = allocator_type()) : allocator_(alloc){
-        for(int i =0 ; i< n; i++){
-            push_back(0);
-        }
-        //std::fill_n(std::back_inserter(*this), n, 0 );
+        std::fill_n(std::back_inserter(*this),n,0);
     }
 
     LinkedList(const size_type n, const_reference val, const allocator_type& alloc = allocator_type()) : allocator_(alloc){
-       for(int i =0 ; i< n; i++){
-           push_back(val);
-       }
-        // std::fill_n(std::back_inserter(*this),n ,val);
+        std::fill_n(std::back_inserter(*this),n,val);
     }
 
     LinkedList(const LinkedList<T, TAllocator>& other):allocator_(other.allocator_)
