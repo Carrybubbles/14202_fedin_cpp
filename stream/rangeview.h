@@ -32,7 +32,7 @@ private:
 };
 
 template <typename Func>
-inline auto transform(Func&& func) {
+auto transform(Func&& func) {
     auto lambda = ([=](auto&& range_view) {
         using Param = typename decltype(range_view.data)::value_type;
         using Result = std::result_of_t<Func(Param&&)>;
@@ -53,6 +53,28 @@ inline auto transform(Func&& func) {
                                      range_view.has_gen_);
     });
     return Function<decltype(lambda)>(lambda);
+}
+
+
+auto reverse() {
+    auto lambda = [=] (auto&& range_view) {
+        using Param = typename decltype(range_view.data)::value_type;
+        auto compose_func = range_view.compose_func;
+        using Result = typename decltype(compose_func)::result_type::value_type;
+        auto func = [=](auto data){
+            std::reverse(data.begin(),data.end());
+            return data;
+        };
+        auto new_compose_func = [compose_func, func](auto data) {
+            return func(compose_func(data));
+        };
+        return RangeView<Result, Param>(std::move(range_view.data),
+                                     std::move(new_compose_func),
+                                     std::move(range_view.gen),
+                                     std::move(range_view.has_gen));
+    };
+    return Function<decltype(lambda)>(lambda);
+
 }
 
 template <typename U, typename Func>
@@ -84,8 +106,8 @@ public:
 public:
     RangeView(){}
 
-    RangeView(std::vector<U>&& data, std::function<std::vector<T>(std::vector<U>)>&& compose_func, int gen, bool has_gen)
-        : data_(std::move(data)), compose_func_(std::move(compose_func)), has_gen_(has_gen),gen_(gen)
+    RangeView(std::vector<U>&& data, std::function<std::vector<T>(std::vector<U>)>&& compose_func, int&& gen, bool&& has_gen)
+        : data_(std::move(data)), compose_func_(std::move(compose_func)), has_gen_(std::move(has_gen)),gen_(std::move(gen))
     {}
 
     RangeView(std::vector<U> v) {
