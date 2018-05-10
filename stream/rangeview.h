@@ -41,9 +41,6 @@ auto transform(Func&& func) {
         auto functor = [=](auto data){
             std::vector<Result> new_vector;
             std::transform(std::begin(data), std::end(data), std::back_inserter(new_vector), func);
-//            for(int i = 0; i < data.size(); i++){
-//                new_vector.push_back(func(data[i]));
-//            }
             return new_vector;
         };
         auto new_compose_func = [compose_func, functor](auto data) {
@@ -108,22 +105,22 @@ inline auto take(unsigned int n) {
         auto has_gen = range_view.is_has_gen();
         auto start_gen = range_view.get_gen();
         using Result = typename decltype(compose_func)::result_type::value_type;
-        auto functor = [has_gen,&range_view,n,start_gen](auto data){
+        auto functor = [has_gen,n,start_gen](auto data){
             if(has_gen == false){
                 if(data.size() > n){
                     data.resize(n);
                 }
             }
             else if(has_gen == true){
-                if(data.size() > n){
-                    data.resize(n);
-                }else{
+//                if(data.size() > n){
+//                    data.resize(n);
+//                }else{
                     int j = start_gen;
                     for(std::size_t i = data.size(); i < n; i++){
                         data.push_back(j);
                         j++;
                     }
-                }
+//                }
              }
             return data;
         };
@@ -184,7 +181,6 @@ public:
     friend auto operator | (std::vector<U> vector, Function<Func> func);
     template <typename Func1, typename Func2>
     friend auto operator | (Function<Func1> init_func, Function<Func2> func);
-
 public:
     RangeView(){}
 
@@ -192,11 +188,7 @@ public:
         : data_(std::move(data)), compose_func_(std::move(compose_func)), has_gen_(has_gen),gen_(gen)
     {}
 
-    RangeView(std::vector<U> v) {
-        std::for_each(std::begin(v), std::end(v),[this](auto val){
-            data_.push_back(val);
-        });
-    }
+    RangeView(const std::vector<U>& v) : data_(v), has_gen_(false) {    }
 
     std::vector<T> make_compose_vector() {
         return compose_func_(data_);
