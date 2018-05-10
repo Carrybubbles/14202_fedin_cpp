@@ -31,6 +31,30 @@ private:
     Func fn;
 };
 
+template <typename Func>
+inline auto transform(Func&& func) {
+    auto lambda = ([=](auto&& range_view) {
+        using Param = typename decltype(range_view.data)::value_type;
+        using Result = std::result_of_t<Func(Param&&)>;
+        auto compose_func = range_view.compose_func;
+        auto functor = [=](auto data){
+            std::vector<Result> new_vector;
+            for(int i = 0; i < data.size(); i++){
+                new_vector.push_back(func(data[i]));
+            }
+            return new_vector;
+        };
+        auto new_compose_func = [compose_func, functor](auto data) {
+            return functor(compose_func(data));
+        };
+        return RangeView<Result, Param>(std::move(range_view.data_),
+                                     std::move(new_compose_func),
+                                     range_view.gen_,
+                                     range_view.has_gen_);
+    });
+    return Function<decltype(lambda)>(lambda);
+}
+
 template <typename U, typename Func>
 auto operator | (std::vector<U> vector, Function<Func> func) {
     RangeView<U,U> temp(vector);
@@ -56,7 +80,6 @@ public:
     friend auto operator | (std::vector<U> vector, Function<Func> func);
     template <typename Func1, typename Func2>
     friend auto operator | (Function<Func1> init_func, Function<Func2> func);
-
 
 public:
     RangeView(){}
