@@ -39,18 +39,19 @@ auto transform(Func&& func) {
         auto compose_func = range_view.compose_func;
         auto functor = [=](auto data){
             std::vector<Result> new_vector;
-            for(int i = 0; i < data.size(); i++){
-                new_vector.push_back(func(data[i]));
-            }
+            std::transform(std::begin(data), std::end(data), std::begin(new_vector));
+//            for(int i = 0; i < data.size(); i++){
+//                new_vector.push_back(func(data[i]));
+//            }
             return new_vector;
         };
         auto new_compose_func = [compose_func, functor](auto data) {
             return functor(compose_func(data));
         };
-        return RangeView<Result, Param>(std::move(range_view.data_),
+        return RangeView<Result, Param>(std::move(range_view.get_data()),
                                      std::move(new_compose_func),
-                                     range_view.gen_,
-                                     range_view.has_gen_);
+                                     std::move(range_view.get_gen()),
+                                     std::move(range_view.is_has_gen()));
     });
     return Function<decltype(lambda)>(lambda);
 }
@@ -68,13 +69,36 @@ auto reverse() {
         auto new_compose_func = [compose_func, func](auto data) {
             return func(compose_func(data));
         };
-        return RangeView<Result, Param>(std::move(range_view.data),
+        return RangeView<Result, Param>(std::move(range_view.get_data()),
                                      std::move(new_compose_func),
-                                     std::move(range_view.gen),
-                                     std::move(range_view.has_gen));
+                                     std::move(range_view.get_gen()),
+                                     std::move(range_view.is_has_gen()));
+
     };
     return Function<decltype(lambda)>(lambda);
 
+}
+
+template <typename Func>
+inline auto remove_if(Func&& func) {
+    auto lambda  = [=](auto&& range_view) {
+        using Param = typename decltype(range_view.data)::value_type;
+        auto compose_func = range_view.compose_func;
+        using Result = typename decltype(compose_func)::result_type::value_type;
+        auto functor = [=](auto data){
+            data.erase(std::remove_if(data.begin(),data.end(), func),data.end());
+            return data;
+        };
+        auto new_compose_func = [compose_func, functor](auto data) {
+            return functor(compose_func(data));
+        };
+        return RangeView<Result, Param>(std::move(range_view.get_data()),
+                                     std::move(new_compose_func),
+                                     std::move(range_view.get_gen()),
+                                     std::move(range_view.is_has_gen()));
+
+    };
+    return Function<decltype(lambda)>(lambda);
 }
 
 template <typename U, typename Func>
@@ -115,7 +139,16 @@ public:
             data_.push_back(val);
         });
     }
+    std::vector<U>& get_data(){
+        return data_;
+    }
+    bool& is_has_gen(){
+        return has_gen_;
+    }
 
+    int& get_gen(){
+        return gen_;
+    }
 public:
     std::vector<U> data_ = std::vector<U>();
     std::function<std::vector<T>(std::vector<U>)> compose_func_ = [](std::vector<U> data){
