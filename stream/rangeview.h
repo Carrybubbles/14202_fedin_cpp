@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <vector>
+#include <algorithm>
 #include <iostream>
 
 namespace rangeview {
@@ -41,7 +42,19 @@ public:
     template<typename Func>
     friend class Function;
 public:
+    RangeView(){}
 
+    RangeView(std::vector<U>&& data, std::function<std::vector<T>(std::vector<U>)>&& compose_func, int gen, bool has_gen)
+        : data_(std::move(data)), compose_func_(std::move(compose_func)), has_gen_(has_gen),gen_(gen)
+    {}
+
+    RangeView(std::vector<U> v) {
+        std::for_each(std::begin(v), std::end(v),[this](auto val){
+            data_.push_back(val);
+        });
+    }
+
+public:
     std::vector<U> data_ = std::vector<U>();
     std::function<std::vector<T>(std::vector<U>)> compose_func_ = [](std::vector<U> data){
         return data;
