@@ -31,6 +31,17 @@ private:
     Func fn;
 };
 
+template <typename U, typename Func>
+auto operator | (std::vector<U> vector, Function<Func> func) {
+    RangeView<U,U> temp(vector);
+    return func.apply(std::move(temp));
+}
+
+template <typename Func1, typename Func2>
+auto operator | (Function<Func1> init_func, Function<Func2> func) {
+    return func.apply(init_func.apply(std::move(RangeView<int,int>())));
+}
+
 template <typename T, typename U>
 class RangeView {
 public:
@@ -41,6 +52,12 @@ public:
 public:
     template<typename Func>
     friend class Function;
+    template <typename Func>
+    friend auto operator | (std::vector<U> vector, Function<Func> func);
+    template <typename Func1, typename Func2>
+    friend auto operator | (Function<Func1> init_func, Function<Func2> func);
+
+
 public:
     RangeView(){}
 
