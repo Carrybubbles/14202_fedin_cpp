@@ -1,4 +1,6 @@
 #include <iostream>
+#include <string>
+
 #include "rangeview.h"
 #include "deps/include/gtest/gtest.h"
 #include "deps/include/gmock/gmock.h"
@@ -17,6 +19,16 @@ TEST(RangeView, rangeview1){
     auto res_vec = (vi
     | remove_if([](int i) {return i % 2 == 1;})
     | transform([](int i) {return std::to_string(i);})).make_compose_vector();
+    std::string result = "";
+    std::string expected = "";
+
+    std::for_each(std::begin(res_vec), std::end(res_vec),[&](auto val){
+        result +=val;
+    });
+    std::for_each(std::begin(q), std::end(q),[&](auto val){
+        expected +=val;
+    });
+    ASSERT_EQ(result,expected);
 }
 
 TEST(RangeView, rangeview2){
@@ -30,11 +42,9 @@ TEST(RangeView, rangeview2){
 }
 
 TEST(RangeView, rangeview3){
-    std::vector<int> vi{1,2,3,4,5,6,7,8,9,10};
     int res_vec = accumulate(ints(1) | take(20)
     | transform([](int i){return i*i;}));
     ASSERT_THAT(res_vec, 2870);
-
 }
 
 TEST(RangeView, rangeview4){
@@ -71,14 +81,12 @@ TEST(RangeView, rangeview8){
     ASSERT_THAT(res_vec,::testing::ElementsAreArray(v));
 }
 
-
 TEST(RangeView, rangeview9){
     std::vector<int> v{};
     std::vector<int> q{1,2,3,4,5,6,7,8,9,10,11,12};
     auto res_vec = (q | remove_if([](auto i) {return i % 2 == 1;}) | remove_if([](auto i) {return i % 2 == 0;}) | take(10)).make_compose_vector();
     ASSERT_THAT(res_vec,::testing::ElementsAreArray(v));
 }
-
 
 TEST(RangeView, rangeview10){
     std::vector<int> v{};
@@ -87,7 +95,6 @@ TEST(RangeView, rangeview10){
     ASSERT_THAT(res_vec,::testing::ElementsAreArray(v));
 }
 
-
 TEST(RangeView, rangeview11){
     std::vector<int> v{};
     std::vector<int> q{1,2,3,4,5,6,7,8,9,10,11,12};
@@ -95,9 +102,14 @@ TEST(RangeView, rangeview11){
     ASSERT_THAT(res_vec,::testing::ElementsAreArray(v));
 }
 
+TEST(RangeView, rangeview12){
+    std::vector<int> v{};
+    auto res_vec = (ints(1)
+                    | take(12)
+                    | transform([](auto i) {return i * 2;}) | remove_if([](auto i) {return i % 2 == 0;}) | reverse()).make_compose_vector();
+    ASSERT_THAT(res_vec,::testing::ElementsAreArray(v));
 
-
-
+}
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
