@@ -64,6 +64,12 @@ TEST(RangeView, rangeview7){
     ASSERT_THAT(res_vec, ::testing::ElementsAreArray(q));
 }
 
+TEST(RangeView, rangeview8){
+    std::vector<int> v{2};
+    std::vector<int> q{1,2,3,4,5,6,7,8,9,10,11,12};
+    auto res_vec = (q | take(2) | remove_if([](int i) {return i % 2 == 1;})).make_compose_vector();
+    ASSERT_THAT(res_vec,::testing::ElementsAreArray(v));
+}
 
 int main(int argc, char **argv)
 {
