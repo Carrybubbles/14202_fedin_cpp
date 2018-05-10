@@ -4,7 +4,7 @@
 #include "deps/include/gmock/gmock.h"
 using namespace rangeview;
 
-TEST(RangeView, rangeview){
+TEST(RangeView, rangeview0){
     std::vector<int> v{2,4,6,8,10,12};
     std::vector<int> q{1,2,3,4,5,6,7,8,9,10,11,12};
     auto res_vec = (q | remove_if([](auto x){ return x % 2 == 1;})).make_compose_vector();
@@ -67,9 +67,36 @@ TEST(RangeView, rangeview7){
 TEST(RangeView, rangeview8){
     std::vector<int> v{2};
     std::vector<int> q{1,2,3,4,5,6,7,8,9,10,11,12};
-    auto res_vec = (q | take(2) | remove_if([](int i) {return i % 2 == 1;})).make_compose_vector();
+    auto res_vec = (q | take(2) | remove_if([](auto i) {return i % 2 == 1;})).make_compose_vector();
     ASSERT_THAT(res_vec,::testing::ElementsAreArray(v));
 }
+
+
+TEST(RangeView, rangeview9){
+    std::vector<int> v{};
+    std::vector<int> q{1,2,3,4,5,6,7,8,9,10,11,12};
+    auto res_vec = (q | remove_if([](auto i) {return i % 2 == 1;}) | remove_if([](auto i) {return i % 2 == 0;}) | take(10)).make_compose_vector();
+    ASSERT_THAT(res_vec,::testing::ElementsAreArray(v));
+}
+
+
+TEST(RangeView, rangeview10){
+    std::vector<int> v{};
+    std::vector<int> q{1,2,3,4,5,6,7,8,9,10,11,12};
+    auto res_vec = (q | remove_if([](auto i) {return i % 2 == 1;}) | remove_if([](int i) {return i % 2 == 0;}) | reverse()  | take(10)).make_compose_vector();
+    ASSERT_THAT(res_vec,::testing::ElementsAreArray(v));
+}
+
+
+TEST(RangeView, rangeview11){
+    std::vector<int> v{};
+    std::vector<int> q{1,2,3,4,5,6,7,8,9,10,11,12};
+    auto res_vec = (q | transform([](auto i) {return i * 2;}) | remove_if([](auto i) {return i % 2 == 0;}) | reverse()  | take(10)).make_compose_vector();
+    ASSERT_THAT(res_vec,::testing::ElementsAreArray(v));
+}
+
+
+
 
 int main(int argc, char **argv)
 {
