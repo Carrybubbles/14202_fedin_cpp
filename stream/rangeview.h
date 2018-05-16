@@ -38,12 +38,12 @@ auto reverse() {
         using Argument = typename decltype(range_view.data_)::value_type;
         auto compose_func = range_view.compose_func_;
         using Result = typename decltype(compose_func)::result_type::value_type;
-        auto&& kek =  RangeView<Result, Argument>(std::move(range_view.data_),
+        auto&& temp =  RangeView<Result, Argument>(std::move(range_view.data_),
                                      range_view.compose_func_,
                                      range_view.gen_,
                                      range_view.has_gen_,
                                      !range_view.is_reverse_);
-        return std::move(kek);
+        return std::move(temp);
 
     };
     return Function<decltype(lambda)>(lambda);
@@ -136,7 +136,6 @@ inline auto take(unsigned int n) {
                 }
             }
         }else{
-
             result_vector = range_view.to_vector();
             if(n < result_vector.size()){
                 result_vector.resize(n);
@@ -145,7 +144,7 @@ inline auto take(unsigned int n) {
         auto&& temp =  RangeView<Result, Result>(std::move(result_vector),
                                     f,
                                     range_view.gen_,
-                                    range_view.has_gen_,
+                                    false,
                                     false);
         return std::move(temp);
     
@@ -246,11 +245,7 @@ public:
         };
     }
 
-
-public:
-
 private:
-
     std::vector<U> data_ = std::vector<U>();
     std::function<OptT(OptU)> compose_func_ = [](OptU data){
         return std::move(data);
@@ -259,6 +254,7 @@ private:
     bool has_gen_ = false;
     bool is_reverse_ = false;
 };
-}
+
+}//rangeview
 
 #endif // VIEW_H
